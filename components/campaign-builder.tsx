@@ -170,8 +170,9 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [openingDmEnabled, setOpeningDmEnabled] = useState(false);
   const [openingDmMessage, setOpeningDmMessage] = useState("");
   const [openingDmButtonLabel, setOpeningDmButtonLabel] = useState("");
+  const [showOpeningDmInfo, setShowOpeningDmInfo] = useState(false);
 
-  const [dmMessage, setDmMessage] = useState("");
+  const [dmMessage, setDmMessage] = useState("Hey {username}! Here is your link: {link} 🚀");
   const [linkOpen, setLinkOpen] = useState(false);
   const [trackedDestinationUrl, setTrackedDestinationUrl] = useState("");
   const [linkButtonLabel, setLinkButtonLabel] = useState("Open link");
@@ -184,7 +185,45 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     useState("i'm following");
   const [followUpEnabled, setFollowUpEnabled] = useState(false);
   const [followUpMessage, setFollowUpMessage] = useState("");
-  const [followUpDelayMinutes, setFollowUpDelayMinutes] = useState(0);
+  const [followUpDelayMinutes, setFollowUpDelayMinutes] = useState(15);
+
+  const toggleOpeningDm = () => {
+    const next = !openingDmEnabled;
+    setOpeningDmEnabled(next);
+    if (next && !openingDmMessage) {
+      setOpeningDmMessage("Hey {username}! So glad you're here 😊");
+      setOpeningDmButtonLabel("Send me the link");
+    }
+  };
+
+  const toggleRequireFollow = () => {
+    const next = !requireFollow;
+    setRequireFollow(next);
+    if (next && !followPromptMessage) {
+      setFollowPromptMessage(
+        "Quick favor before I send your link! Please follow our page to support us, then tap the button below to get your link 🚀"
+      );
+      setFollowPromptButtonLabel("i'm following");
+    }
+  };
+
+  const toggleFollowUp = () => {
+    const next = !followUpEnabled;
+    setFollowUpEnabled(next);
+    if (next && !followUpMessage) {
+      setFollowUpMessage(
+        "Hey {username}, just checking in! Did you get a chance to check out the link?"
+      );
+      setFollowUpDelayMinutes(15);
+    }
+  };
+
+  const insertPlaceholder = (ph: string) => {
+    setDmMessage((prev) => {
+      if (prev.includes(ph)) return prev;
+      return prev ? `${prev} ${ph}` : ph;
+    });
+  };
 
   const [previewTab, setPreviewTab] = useState<PreviewTab>("dm");
 
@@ -793,19 +832,44 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
         <Section title="They will get">
           <div className="rounded-lg border border-border p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">an opening DM</span>
-              <Toggle
-                on={openingDmEnabled}
-                onToggle={() => setOpeningDmEnabled(!openingDmEnabled)}
-              />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm text-foreground">an opening DM</span>
+                <button
+                  type="button"
+                  onClick={() => setShowOpeningDmInfo(true)}
+                  className="text-xs text-accent hover:underline font-medium"
+                >
+                  (Why does an Opening DM matter?)
+                </button>
+              </div>
+              <Toggle on={openingDmEnabled} onToggle={toggleOpeningDm} />
             </div>
+
+            {showOpeningDmInfo && (
+              <div className="mt-2.5 rounded-lg border border-accent/30 bg-accent/10 p-3 text-xs text-foreground space-y-1.5">
+                <div className="flex items-center justify-between font-semibold text-accent">
+                  <span>Why does an Opening DM matter?</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowOpeningDmInfo(false)}
+                    className="text-muted hover:text-foreground"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p>
+                  Meta enforces a strict 24-hour interaction window for Instagram business messaging. Sending an initial opening DM with an interactive button (e.g. &quot;Send me the link&quot;) encourages the user to tap the button, which reliably opens the 24-hour window so your link DM is delivered 100% of the time.
+                </p>
+              </div>
+            )}
+
             {openingDmEnabled && (
               <div className="mt-3 space-y-2">
                 <textarea
                   value={openingDmMessage}
                   onChange={(e) => setOpeningDmMessage(e.target.value)}
-                  placeholder="Hey there! I'm so happy you're here 😊"
+                  placeholder="Hey {username}! So glad you're here 😊"
                   rows={3}
                   className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
                   maxLength={1000}
@@ -820,22 +884,20 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               </div>
             )}
           </div>
+
           <div className="mt-3 rounded-lg border border-border p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">
-                a follow requirement first
+                a DM asking to follow you before they get the link
               </span>
-              <Toggle
-                on={requireFollow}
-                onToggle={() => setRequireFollow(!requireFollow)}
-              />
+              <Toggle on={requireFollow} onToggle={toggleRequireFollow} />
             </div>
             {requireFollow && (
               <div className="mt-3 space-y-2">
                 <textarea
                   value={followPromptMessage}
                   onChange={(e) => setFollowPromptMessage(e.target.value)}
-                  placeholder="quick favor before i send your link. i don't make any money from this, it's free. if you want to support me, just don't unfollow after, and star the repo on github if it helps you. tap the button once you're following and i'll send it over"
+                  placeholder="Quick favor before I send your link! Please follow our page to support us, then tap below to get your link 🚀"
                   rows={3}
                   className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
                   maxLength={1000}
@@ -859,11 +921,30 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
         <Section title="And then, they will get">
           <div className="rounded-lg border border-border p-3 space-y-2">
-            <span className="text-sm text-foreground">a DM with a link</span>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground font-medium">a DM with a link</span>
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-muted">Insert:</span>
+                <button
+                  type="button"
+                  onClick={() => insertPlaceholder("{username}")}
+                  className="rounded bg-surface px-1.5 py-0.5 font-mono text-accent hover:bg-zinc-800 border border-border"
+                >
+                  {"{username}"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertPlaceholder("{link}")}
+                  className="rounded bg-surface px-1.5 py-0.5 font-mono text-accent hover:bg-zinc-800 border border-border"
+                >
+                  {"{link}"}
+                </button>
+              </div>
+            </div>
             <textarea
               value={dmMessage}
               onChange={(e) => setDmMessage(e.target.value)}
-              placeholder="Write a message"
+              placeholder="Hey {username}! Here is your link: {link} 🚀"
               rows={3}
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
               maxLength={1000}
@@ -926,19 +1007,16 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           <div className="mt-3 rounded-lg border border-border p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">
-                a follow-up thank-you message
+                a follow up DM if they don&apos;t click the link
               </span>
-              <Toggle
-                on={followUpEnabled}
-                onToggle={() => setFollowUpEnabled(!followUpEnabled)}
-              />
+              <Toggle on={followUpEnabled} onToggle={toggleFollowUp} />
             </div>
             {followUpEnabled && (
               <div className="mt-3 space-y-2">
                 <textarea
                   value={followUpMessage}
                   onChange={(e) => setFollowUpMessage(e.target.value)}
-                  placeholder="Btw just wanted to say thanks for following me, I appreciate the support 🙌"
+                  placeholder="Hey {username}, just checking in! Did you get a chance to check out the link?"
                   rows={3}
                   className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
                   maxLength={1000}
@@ -963,10 +1041,9 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 </div>
                 <p className="text-xs text-muted">
                   {followUpDelayMinutes > 0
-                    ? `Sent ${followUpDelayMinutes} min after they tap through.`
-                    : "Sent right after they tap through."}
-                  {" {username}"} personalizes it. Max 24 hours, to stay inside
-                  Instagram&apos;s messaging window.
+                    ? `Sent ${followUpDelayMinutes} min after they receive the link.`
+                    : "Sent right after they receive the link."}
+                  {" {username}"} personalizes it. Max 24 hours.
                 </p>
               </div>
             )}
