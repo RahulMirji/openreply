@@ -24,6 +24,13 @@ import {
   type ImportRow,
 } from "@/lib/import-queue";
 
+export const DEFAULT_PUBLIC_REPLIES = [
+  "Sent you a DM! 📩",
+  "Check your DMs! 📬",
+  "Sent to your inbox! 📥",
+  "Check your direct messages ✉️",
+];
+
 type TriggerScope = "specific" | "any" | "next";
 type MatchMode = "specific" | "any";
 
@@ -157,8 +164,8 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [matchMode, setMatchMode] = useState<MatchMode>("specific");
   const [keywordText, setKeywordText] = useState("");
 
-  const [publicReplyEnabled, setPublicReplyEnabled] = useState(false);
-  const [publicReplyMessages, setPublicReplyMessages] = useState<string[]>([""]);
+  const [publicReplyEnabled, setPublicReplyEnabled] = useState(true);
+  const [publicReplyMessages, setPublicReplyMessages] = useState<string[]>(DEFAULT_PUBLIC_REPLIES);
 
   const [openingDmEnabled, setOpeningDmEnabled] = useState(false);
   const [openingDmMessage, setOpeningDmMessage] = useState("");
@@ -756,17 +763,26 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   )}
                 </div>
               ))}
-              {publicReplyMessages.length < 10 && (
+              <div className="flex items-center gap-4">
+                {publicReplyMessages.length < 10 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPublicReplyMessages((prev) => [...prev, ""])
+                    }
+                    className="text-xs font-medium text-accent hover:underline"
+                  >
+                    + Add another reply
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() =>
-                    setPublicReplyMessages((prev) => [...prev, ""])
-                  }
-                  className="text-xs font-medium text-accent hover:underline"
+                  onClick={() => setPublicReplyMessages(DEFAULT_PUBLIC_REPLIES)}
+                  className="text-xs text-muted hover:text-foreground hover:underline"
                 >
-                  + Add another reply
+                  ⚡ Reset to default replies
                 </button>
-              )}
+              </div>
               <p className="text-xs text-muted">
                 One is picked at random each time, so replies don&apos;t look
                 identical.
