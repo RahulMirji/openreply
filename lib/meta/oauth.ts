@@ -82,10 +82,17 @@ export function getAuthorizationUrl(redirectUri: string, state: string): string 
   return `${INSTAGRAM_OAUTH_URL}?${params.toString()}`;
 }
 
+/**
+ * Instagram returns the list of scopes it actually granted alongside the token.
+ * Meta silently drops scopes an app is not approved for, so the granted set can
+ * be narrower than what `getAuthorizationUrl` requested — which shows up much
+ * later as comment reads returning an empty list instead of an error. Surface it
+ * so a partial grant is visible at connect time.
+ */
 export async function exchangeCodeForToken(
   code: string,
   redirectUri: string
-): Promise<{ accessToken: string; userId: string }> {
+): Promise<{ accessToken: string; userId: string; permissions: string[] }> {
   const body = new URLSearchParams({
     client_id: requireEnv("INSTAGRAM_APP_ID"),
     client_secret: requireEnv("INSTAGRAM_APP_SECRET"),
@@ -111,7 +118,20 @@ export async function exchangeCodeForToken(
   return {
     accessToken: data.access_token,
     userId: String(data.user_id),
+    permissions: normalizePermissions(data.permissions),
   };
+}
+
+/** Instagram has returned this as both a comma-separated string and an array. */
+function normalizePermissions(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+  }
+  return [];
 }
 
 function getEncryptionKey(): Buffer {

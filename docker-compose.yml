@@ -3,11 +3,11 @@
 
 services:
   postgres:
-    image: postgres:16
+    image: postgis/postgis:16-3.4
     environment:
       POSTGRES_DB: openreply
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: openreply
+      POSTGRES_PASSWORD: openreply_secure_pass_2026
     ports:
       - "5432:5432"
     volumes:

@@ -23,6 +23,16 @@
 # misc
 .DS_Store
 *.pem
+.gcp-inventory.txt
+.vscode/
+.kiro/
+
+# private keys / credentials — never commit
+*.key
+ssh-key-*
+id_rsa
+id_ed25519
+*.ppk
 
 # debug
 npm-debug.log*

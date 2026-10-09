@@ -143,7 +143,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState(mode === "new" ? "Automation" : "");
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState("");
 
@@ -167,6 +167,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [publicReplyEnabled, setPublicReplyEnabled] = useState(true);
   const [publicReplyMessages, setPublicReplyMessages] = useState<string[]>(DEFAULT_PUBLIC_REPLIES);
 
+  const [sendDmEnabled, setSendDmEnabled] = useState(true);
   const [openingDmEnabled, setOpeningDmEnabled] = useState(false);
   const [openingDmMessage, setOpeningDmMessage] = useState("");
   const [openingDmButtonLabel, setOpeningDmButtonLabel] = useState("");
@@ -434,14 +435,16 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       return setError("Pick a post or reel to trigger the campaign.");
     if (matchMode === "specific" && keywords.length === 0)
       return setError("Add at least one keyword, or switch to any word.");
-    if (!dmMessage.trim()) return setError("Add the DM with the link.");
+    if (sendDmEnabled && !dmMessage.trim()) return setError("Add the DM with the link.");
+    if (!sendDmEnabled && (!publicReplyEnabled || publicReplyMessages.filter((m) => m.trim()).length === 0))
+      return setError("Add at least one comment reply message when DM is disabled.");
     if (openingDmEnabled && (!openingDmMessage.trim() || !openingDmButtonLabel.trim()))
       return setError("Your opening DM needs a message and a button label.");
 
     setSaving(true);
 
     const payload = {
-      name: name.trim() || `Campaign for @${username}`,
+      name: name.trim() || "Automation",
       instagramAccountId: selectedAccountId,
       postId: triggerScope === "specific" ? postId : null,
       postUrl: triggerScope === "specific" ? postUrl : null,
@@ -449,7 +452,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       pendingNextReel: triggerScope === "next",
       matchAnyWord: matchMode === "any",
       keywords: matchMode === "any" ? [] : keywords,
-      dmMessage,
+      dmMessage: sendDmEnabled ? dmMessage : "(Public comment reply only)",
       openingDmEnabled,
       openingDmMessage: openingDmEnabled ? openingDmMessage : null,
       openingDmButtonLabel: openingDmEnabled ? openingDmButtonLabel : null,
@@ -457,9 +460,17 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       publicReplyMessages: publicReplyEnabled
         ? publicReplyMessages.map((m) => m.trim()).filter(Boolean)
         : [],
-      trackedDestinationUrl: trackedDestinationUrl.trim() || "",
+      trackedDestinationUrl: trackedDestinationUrl.trim()
+        ? /^https?:\/\//i.test(trackedDestinationUrl.trim())
+          ? trackedDestinationUrl.trim()
+          : `https://${trackedDestinationUrl.trim()}`
+        : "",
       linkButtonLabel: linkButtonLabel.trim() || "Open link",
-      secondaryDestinationUrl: secondaryDestinationUrl.trim() || "",
+      secondaryDestinationUrl: secondaryDestinationUrl.trim()
+        ? /^https?:\/\//i.test(secondaryDestinationUrl.trim())
+          ? secondaryDestinationUrl.trim()
+          : `https://${secondaryDestinationUrl.trim()}`
+        : "",
       secondaryButtonLabel: secondaryButtonLabel.trim() || "Open link",
       requireFollow,
       followPromptMessage: requireFollow ? followPromptMessage.trim() : "",
@@ -920,90 +931,105 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         </Section>
 
         <Section title="And then, they will get">
-          <div className="rounded-lg border border-border p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground font-medium">a DM with a link</span>
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-muted">Insert:</span>
-                <button
-                  type="button"
-                  onClick={() => insertPlaceholder("{username}")}
-                  className="rounded bg-surface px-1.5 py-0.5 font-mono text-accent hover:bg-zinc-800 border border-border"
-                >
-                  {"{username}"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertPlaceholder("{link}")}
-                  className="rounded bg-surface px-1.5 py-0.5 font-mono text-accent hover:bg-zinc-800 border border-border"
-                >
-                  {"{link}"}
-                </button>
-              </div>
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div className="space-y-0.5">
+              <span className="text-sm font-medium text-foreground">Send a direct message (DM)</span>
+              <p className="text-xs text-muted">Turn off if you ONLY want to reply to comments under the post</p>
             </div>
-            <textarea
-              value={dmMessage}
-              onChange={(e) => setDmMessage(e.target.value)}
-              placeholder="Hey {username}! Here is your link: {link} 🚀"
-              rows={3}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
-              maxLength={1000}
-            />
-            {linkOpen ? (
-              <div className="space-y-2">
-                <input
-                  value={trackedDestinationUrl}
-                  onChange={(e) => setTrackedDestinationUrl(e.target.value)}
-                  onBlur={ensureLinkToken}
-                  placeholder="https://yourlink.com/offer"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
-                />
-                <input
-                  value={linkButtonLabel}
-                  onChange={(e) => setLinkButtonLabel(e.target.value)}
-                  placeholder="Button label (e.g. Open link)"
-                  maxLength={20}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
-                />
-                {secondLinkOpen ? (
-                  <div className="space-y-2 border-t border-border pt-2">
-                    <input
-                      value={secondaryDestinationUrl}
-                      onChange={(e) => setSecondaryDestinationUrl(e.target.value)}
-                      placeholder="https://yourlink.com/second"
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
-                    />
-                    <input
-                      value={secondaryButtonLabel}
-                      onChange={(e) => setSecondaryButtonLabel(e.target.value)}
-                      placeholder="Second button label"
-                      maxLength={20}
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
-                    />
-                  </div>
-                ) : (
+            <Toggle on={sendDmEnabled} onToggle={() => setSendDmEnabled(!sendDmEnabled)} />
+          </div>
+
+          {sendDmEnabled ? (
+            <div className="mt-3 rounded-lg border border-border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground font-medium">a DM with a link</span>
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="text-muted">Insert:</span>
                   <button
                     type="button"
-                    onClick={() => setSecondLinkOpen(true)}
-                    className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
+                    onClick={() => insertPlaceholder("{username}")}
+                    className="rounded bg-surface px-1.5 py-0.5 font-mono text-accent hover:bg-zinc-800 border border-border"
                   >
-                    + Add A Second Link
+                    {"{username}"}
                   </button>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => insertPlaceholder("{link}")}
+                    className="rounded bg-surface px-1.5 py-0.5 font-mono text-accent hover:bg-zinc-800 border border-border"
+                  >
+                    {"{link}"}
+                  </button>
+                </div>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setLinkOpen(true)}
-                className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
-              >
-                + Add A Link
-              </button>
-            )}
-            <p className="text-xs text-muted">
-              {"{link}"} inserts the tracked link; {"{username}"} personalizes.
-            </p>
-          </div>
+              <textarea
+                value={dmMessage}
+                onChange={(e) => setDmMessage(e.target.value)}
+                placeholder="Hey {username}! Here is your link: {link} 🚀"
+                rows={3}
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
+                maxLength={1000}
+              />
+              {linkOpen ? (
+                <div className="space-y-2">
+                  <input
+                    value={trackedDestinationUrl}
+                    onChange={(e) => setTrackedDestinationUrl(e.target.value)}
+                    onBlur={ensureLinkToken}
+                    placeholder="https://yourlink.com/offer"
+                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  />
+                  <input
+                    value={linkButtonLabel}
+                    onChange={(e) => setLinkButtonLabel(e.target.value)}
+                    placeholder="Button label (e.g. Open link)"
+                    maxLength={20}
+                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  />
+                  {secondLinkOpen ? (
+                    <div className="space-y-2 border-t border-border pt-2">
+                      <input
+                        value={secondaryDestinationUrl}
+                        onChange={(e) => setSecondaryDestinationUrl(e.target.value)}
+                        placeholder="https://yourlink.com/second"
+                        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                      />
+                      <input
+                        value={secondaryButtonLabel}
+                        onChange={(e) => setSecondaryButtonLabel(e.target.value)}
+                        placeholder="Second button label"
+                        maxLength={20}
+                        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setSecondLinkOpen(true)}
+                      className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
+                    >
+                      + Add A Second Link
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setLinkOpen(true)}
+                  className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
+                >
+                  + Add A Link
+                </button>
+              )}
+              <p className="text-xs text-muted">
+                {"{link}"} inserts the tracked link; {"{username}"} personalizes.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-3 rounded-lg border border-accent/20 bg-accent/10 p-3 text-xs text-foreground space-y-1">
+              <p className="font-semibold text-accent">💬 Only Public Comment Reply Mode Active</p>
+              <p className="text-muted">No DM will be sent to the user. OpenReply will only reply to their comment under the post using your comment replies above.</p>
+            </div>
+          )}
           <div className="mt-3 rounded-lg border border-border p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">

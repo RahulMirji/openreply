@@ -43,10 +43,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const redirectUri = `${baseUrl}/api/instagram/callback`;
-    const { accessToken: shortLivedToken } = await exchangeCodeForToken(
-      code,
-      redirectUri
-    );
+    const { accessToken: shortLivedToken, permissions: grantedPermissions } =
+      await exchangeCodeForToken(code, redirectUri);
     const { accessToken: longLivedToken, expiresIn } =
       await getLongLivedToken(shortLivedToken);
     const userInfo = await getUserInfo(longLivedToken);
@@ -103,6 +101,35 @@ export async function GET(request: NextRequest) {
         webhookSubscribed,
       },
     });
+
+    // Record exactly what Meta granted. Comment features fail silently (empty
+    // lists, no webhooks) rather than erroring when this scope is absent, so
+    // make a partial grant visible in the logs instead of leaving it to guesswork.
+    const missingScopes = [
+      "instagram_business_basic",
+      "instagram_business_manage_comments",
+      "instagram_business_manage_messages",
+    ].filter((scope) => !grantedPermissions.includes(scope));
+
+    await prisma.operationalEvent
+      .create({
+        data: {
+          source: "SYSTEM",
+          level: missingScopes.length > 0 ? "WARNING" : "INFO",
+          workspaceId: state.workspaceId,
+          message:
+            missingScopes.length > 0
+              ? `Instagram connected with MISSING scopes: [${missingScopes.join(", ")}]. Granted: [${grantedPermissions.join(", ") || "none reported"}]`
+              : `Instagram connected. Granted scopes: [${grantedPermissions.join(", ")}]`,
+          payload: {
+            granted: grantedPermissions,
+            missing: missingScopes,
+            instagramId,
+            webhookSubscribed,
+          },
+        },
+      })
+      .catch(() => {});
 
     return NextResponse.redirect(`${baseUrl}/dashboard?connected=true`);
   } catch (err) {

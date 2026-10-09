@@ -1,25 +1,103 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import Resend from "next-auth/providers/resend";
+import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db/client";
 import { ensureWorkspaceForUser, getPrimaryWorkspace } from "@/lib/workspace";
+import { verifyPassword } from "@/lib/auth/password";
+import {
+  clearFailedLogins,
+  isLoginBlocked,
+  recordFailedLogin,
+} from "@/lib/auth/login-throttle";
 
 type AdapterPrismaClient = Parameters<typeof PrismaAdapter>[0];
+
+/**
+ * A real scrypt hash of a random value, verified against when an account does
+ * not exist or has no password. This keeps the failure path's timing similar to
+ * the success path so an attacker cannot distinguish "no such user" from "wrong
+ * password" by response time.
+ */
+const DUMMY_PASSWORD_HASH =
+  "scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA==$" +
+  "Ej0YyQ1sQmQnJ0kZ3sZ8dQ0cQ8vJ0kZ3sZ8dQ0cQ8vJ0kZ3sZ8dQ0cQ8vJ0kZ3sZ8dQ0cQ8vJ0g==";
 
 export const authConfig = {
   adapter: PrismaAdapter(prisma as unknown as AdapterPrismaClient),
   providers: [
+    Credentials({
+      name: "Password",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      // Returning null makes Auth.js raise CredentialsSignin, which the login
+      // page renders as a single generic message. Every failure path below is
+      // deliberately indistinguishable to the caller so this endpoint cannot be
+      // used to enumerate which emails have accounts.
+      async authorize(credentials) {
+        const email = (credentials?.email as string | undefined)
+          ?.toLowerCase()
+          .trim();
+        const password = credentials?.password as string | undefined;
+
+        if (!email || !password) return null;
+        if (await isLoginBlocked(email)) return null;
+
+        const user = await prisma.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+            passwordHash: true,
+          },
+        });
+
+        // No account, or an account that has never set a password (magic-link
+        // only). Still run a verify against a dummy hash so the response time
+        // does not reveal which case it was.
+        if (!user?.passwordHash) {
+          await verifyPassword(password, DUMMY_PASSWORD_HASH);
+          await recordFailedLogin(email);
+          return null;
+        }
+
+        if (!(await verifyPassword(password, user.passwordHash))) {
+          await recordFailedLogin(email);
+          return null;
+        }
+
+        await clearFailedLogins(email);
+        await ensureWorkspaceForUser(user.id, user.email);
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        };
+      },
+    }),
     Resend({
       apiKey: process.env.RESEND_API_KEY ?? "missing-resend-api-key",
       from: process.env.EMAIL_FROM ?? "OpenReply <login@example.com>",
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
       }
       return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id;
+      }
+      return token;
     },
   },
   events: {
@@ -34,7 +112,7 @@ export const authConfig = {
     verifyRequest: "/verify-request",
   },
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
   trustHost: true,
   secret: process.env.NEXTAUTH_SECRET,

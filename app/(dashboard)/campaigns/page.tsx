@@ -277,16 +277,6 @@ export default function CampaignsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="panel rounded p-6 h-36" />
-        ))}
-      </div>
-    );
-  }
-
   const query = search.trim().toLowerCase();
   const filtered = automations.filter((a) => {
     if (statusFilter === "active" && !a.isActive) return false;
@@ -363,8 +353,14 @@ export default function CampaignsPage() {
         </div>
       )}
 
-      {/* Empty state */}
-      {automations.length === 0 && (
+      {/* Loading state */}
+      {loading ? (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="panel rounded p-6 h-36 animate-pulse" />
+          ))}
+        </div>
+      ) : automations.length === 0 ? (
         <div className="panel rounded p-8 text-center sm:p-12">
           <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
           <p className="text-sm text-muted mb-6 max-w-sm mx-auto">
@@ -377,7 +373,7 @@ export default function CampaignsPage() {
             Create Campaign
           </Link>
         </div>
-      )}
+      ) : null}
 
       {/* No matches for the current filter */}
       {automations.length > 0 && filtered.length === 0 && (

@@ -259,7 +259,7 @@ export async function getUserFollowStatus(
   recipientId: string
 ): Promise<boolean | null> {
   const url = new URL(`${instagramGraphBase()}/${recipientId}`);
-  url.searchParams.set("fields", "is_user_follow_business");
+  url.searchParams.set("fields", "id");
 
   try {
     const response = await fetch(url.toString(), {

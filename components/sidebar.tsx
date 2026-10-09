@@ -8,6 +8,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useFormStatus } from "react-dom";
+import { signOutAction } from "@/lib/actions/auth";
+
+/**
+ * Split out so it can read useFormStatus, which only reports the status of a
+ * parent <form>.
+ */
+function SignOutButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full text-left px-3 py-2 rounded text-sm text-muted hover:text-foreground hover:bg-surface-hover disabled:opacity-60 transition-colors"
+    >
+      {pending ? "Signing out..." : "Sign out"}
+    </button>
+  );
+}
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },
@@ -23,12 +43,14 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   workspaceName: string;
+  userEmail?: string | null;
 }
 
 export default function Sidebar({
   isOpen,
   onClose,
   workspaceName,
+  userEmail,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -81,9 +103,21 @@ export default function Sidebar({
           })}
         </nav>
 
-        <div className="px-5 py-4 border-t border-border">
-          <p className="text-sm text-foreground truncate">{workspaceName}</p>
-          <p className="text-xs text-muted">Self-hosted</p>
+        <div className="px-5 py-4 border-t border-border space-y-3">
+          <div>
+            <p className="text-sm text-foreground truncate">{workspaceName}</p>
+            {userEmail ? (
+              <p className="text-xs text-muted truncate" title={userEmail}>
+                {userEmail}
+              </p>
+            ) : (
+              <p className="text-xs text-muted">Self-hosted</p>
+            )}
+          </div>
+
+          <form action={signOutAction}>
+            <SignOutButton />
+          </form>
         </div>
       </aside>
     </>
