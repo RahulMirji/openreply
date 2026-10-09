@@ -4,9 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
-
-const inputClass =
-  "w-full px-4 py-3 rounded bg-surface border border-border text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none transition-colors";
+import { PasswordInput } from "@/components/password-input";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -121,14 +119,12 @@ function ResetPasswordForm() {
         <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-2">
           New Password
         </label>
-        <input
-          type="password"
+        <PasswordInput
           required
           autoFocus
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
-          className={inputClass}
         />
       </div>
 
@@ -136,13 +132,11 @@ function ResetPasswordForm() {
         <label className="block text-xs font-semibold uppercase tracking-wide text-muted mb-2">
           Confirm Password
         </label>
-        <input
-          type="password"
+        <PasswordInput
           required
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           placeholder="Re-enter your new password"
-          className={inputClass}
         />
       </div>
 

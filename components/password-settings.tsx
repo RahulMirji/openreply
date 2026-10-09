@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
-
-const inputClass =
-  "w-full px-4 py-3 rounded bg-surface border border-border text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none transition-colors";
+import { PasswordInput } from "@/components/password-input";
 
 export function PasswordSettings() {
   const [hasPassword, setHasPassword] = useState<boolean | null>(null);
@@ -67,7 +65,7 @@ export function PasswordSettings() {
       setConfirmPassword("");
       setMessage({
         kind: "success",
-        text: "Password saved. You can now sign in with your email and password.",
+        text: "Password saved successfully.",
       });
     } catch {
       setMessage({ kind: "error", text: "Network error. Please try again." });
@@ -82,8 +80,8 @@ export function PasswordSettings() {
 
       <p className="text-sm text-muted mb-5">
         {hasPassword
-          ? "Change the password you use to sign in. Magic-link sign in keeps working either way."
-          : "Set a password so you can sign in without waiting for an email. Magic links keep working too."}
+          ? "Change the password you use to sign in."
+          : "Set a password so you can sign in to your account."}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
@@ -95,14 +93,13 @@ export function PasswordSettings() {
             >
               Current password
             </label>
-            <input
+            <PasswordInput
               id="currentPassword"
-              type="password"
+              name="currentPassword"
               autoComplete="current-password"
               required
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className={inputClass}
             />
           </div>
         )}
@@ -114,15 +111,14 @@ export function PasswordSettings() {
           >
             {hasPassword ? "New password" : "Password"}
           </label>
-          <input
+          <PasswordInput
             id="newPassword"
-            type="password"
+            name="newPassword"
             autoComplete="new-password"
             required
             minLength={MIN_PASSWORD_LENGTH}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className={inputClass}
           />
           <p className="text-xs text-muted">
             At least {MIN_PASSWORD_LENGTH} characters.
@@ -136,14 +132,13 @@ export function PasswordSettings() {
           >
             Confirm password
           </label>
-          <input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
+            name="confirmPassword"
             autoComplete="new-password"
             required
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className={inputClass}
           />
         </div>
 

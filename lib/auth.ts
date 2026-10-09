@@ -1,5 +1,4 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
-import Resend from "next-auth/providers/resend";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db/client";
@@ -81,10 +80,6 @@ export const authConfig = {
         };
       },
     }),
-    Resend({
-      apiKey: process.env.RESEND_API_KEY ?? "missing-resend-api-key",
-      from: process.env.EMAIL_FROM ?? "OpenReply <login@example.com>",
-    }),
   ],
   callbacks: {
     async session({ session, token }) {
@@ -109,13 +104,13 @@ export const authConfig = {
   },
   pages: {
     signIn: "/login",
-    verifyRequest: "/verify-request",
+    error: "/login",
   },
   session: {
     strategy: "jwt",
   },
   trustHost: true,
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
 } satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
