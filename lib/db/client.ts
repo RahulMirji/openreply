@@ -17,7 +17,11 @@ function createPrismaClient() {
 }
 
 export function getPrisma(): PrismaClient {
-  if (!globalForPrisma.prisma) {
+  if (
+    !globalForPrisma.prisma ||
+    (process.env.NODE_ENV !== "production" &&
+      !("xCrossPostDraft" in (globalForPrisma.prisma as unknown as Record<string, unknown>)))
+  ) {
     globalForPrisma.prisma = createPrismaClient();
   }
 

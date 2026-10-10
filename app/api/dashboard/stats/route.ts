@@ -189,11 +189,41 @@ export async function GET(request: NextRequest) {
     user?.email?.split("@")[0] ||
     null;
 
+  // Retrieve current followers and 30-day net change for the hero card
+  const targetAccountId = selectedAccountId || instagramAccount?.id;
+  let followers: number | null = null;
+  let followersNet30d: number | null = null;
+
+  if (targetAccountId) {
+    const latestSnapshot = await prisma.followerSnapshot.findFirst({
+      where: { instagramAccountId: targetAccountId },
+      orderBy: { date: "desc" },
+    });
+    if (latestSnapshot) {
+      followers = latestSnapshot.followersCount;
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const pastSnapshot = await prisma.followerSnapshot.findFirst({
+        where: {
+          instagramAccountId: targetAccountId,
+          date: { lte: thirtyDaysAgo },
+        },
+        orderBy: { date: "desc" },
+      });
+      if (pastSnapshot) {
+        followersNet30d = latestSnapshot.followersCount - pastSnapshot.followersCount;
+      }
+    }
+  }
+
   return NextResponse.json({
     success: true,
     data: {
       userName: firstName,
       contactsCount: contactRows.length,
+      followers,
+      followersNet30d,
       workspace,
       instagramAccount,
       instagramAccounts,

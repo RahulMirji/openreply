@@ -98,6 +98,8 @@ model Workspace {
   linkClicks        LinkClick[]
   webhookEvents     WebhookEvent[]
   operationalEvents OperationalEvent[]
+  xAccount          XAccount?
+  xCrossPostDrafts  XCrossPostDraft[]
 
   @@index([ownerId])
 }
@@ -155,6 +157,7 @@ model InstagramAccount {
   dmLogs      DmLog[]
   linkClicks  LinkClick[]
   followerSnapshots FollowerSnapshot[]
+  xCrossPostDrafts  XCrossPostDraft[]
 
   @@index([workspaceId])
 }
@@ -395,4 +398,62 @@ enum OperationalEventLevel {
   INFO
   WARNING
   ERROR
+}
+
+enum CrossPostStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  QUEUED
+  PUBLISHED
+  FAILED
+}
+
+model XCrossPostDraft {
+  id                 String          @id @default(cuid())
+  workspaceId        String
+  instagramAccountId String
+
+  instagramPostId    String
+  instagramPermalink String?
+
+  mediaType          String          // IMAGE | VIDEO | CAROUSEL_ALBUM
+  originalMediaUrls  String[]
+  selectedMediaUrls  String[]
+  thumbnailUrl       String?
+
+  originalCaption    String?         @db.Text
+  tweetText          String          @db.Text
+
+  status             CrossPostStatus @default(DRAFT)
+  xTweetId           String?
+  xTweetUrl          String?
+  errorMessage       String?
+
+  approvedAt         DateTime?
+  publishedAt        DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  workspace        Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  instagramAccount InstagramAccount @relation(fields: [instagramAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, instagramPostId])
+  @@index([workspaceId, status])
+}
+
+model XAccount {
+  id             String    @id @default(cuid())
+  workspaceId    String    @unique
+  xUserId        String    @unique
+  username       String
+  name           String?
+  profileImage   String?
+  accessToken    String
+  refreshToken   String?
+  tokenExpiresAt DateTime?
+  connectedAt    DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }

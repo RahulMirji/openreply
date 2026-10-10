@@ -7,7 +7,9 @@ import TopBar from "@/components/top-bar";
 interface DashboardShellProps {
   children: React.ReactNode;
   workspaceName: string;
+  userName?: string | null;
   userEmail?: string | null;
+  userImage?: string | null;
   instagramUsername: string | null;
   instagramAccountCount: number;
 }
@@ -15,7 +17,9 @@ interface DashboardShellProps {
 export default function DashboardShell({
   children,
   workspaceName,
+  userName,
   userEmail,
+  userImage,
   instagramUsername,
   instagramAccountCount,
 }: DashboardShellProps) {
@@ -29,12 +33,17 @@ export default function DashboardShell({
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         workspaceName={workspaceName}
+        userName={userName}
         userEmail={userEmail}
+        userImage={userImage}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar
           onMenuClick={() => setSidebarOpen(true)}
+          userName={userName}
+          userEmail={userEmail}
+          userImage={userImage}
           instagramUsername={instagramUsername}
           instagramAccountCount={instagramAccountCount}
         />

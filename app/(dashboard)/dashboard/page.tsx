@@ -10,10 +10,13 @@ import { useEffect, useState } from "react";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
 import StatCard from "@/components/stat-card";
 import StatusBadge from "@/components/status-badge";
+import FollowerHeroCard from "@/components/follower-hero-card";
 
 interface DashboardStats {
   userName: string | null;
   contactsCount: number;
+  followers?: number | null;
+  followersNet30d?: number | null;
   totalAutomations: number;
   activeAutomations: number;
   dmsSentToday: number;
@@ -113,6 +116,19 @@ export default function DashboardPage() {
           />
         )}
       </div>
+
+      {/* Hero Follower Growth Display (Same big bold catchy size as Overview) */}
+      {stats?.followers !== null && stats?.followers !== undefined && (
+        <FollowerHeroCard
+          followers={stats.followers}
+          username={
+            stats.instagramAccounts.find((a) => a.id === selectedAccountId)?.username ||
+            stats.instagramAccounts[0]?.username
+          }
+          netChange={stats.followersNet30d}
+          daysCount={30}
+        />
+      )}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">

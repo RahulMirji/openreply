@@ -102,6 +102,21 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    if (userInfo.profile_picture_url) {
+      const workspace = await prisma.workspace.findUnique({
+        where: { id: state.workspaceId },
+        select: { ownerId: true },
+      });
+      if (workspace?.ownerId) {
+        await prisma.user
+          .update({
+            where: { id: workspace.ownerId },
+            data: { image: userInfo.profile_picture_url },
+          })
+          .catch(() => {});
+      }
+    }
+
     // Record exactly what Meta granted. Comment features fail silently (empty
     // lists, no webhooks) rather than erroring when this scope is absent, so
     // make a partial grant visible in the logs instead of leaving it to guesswork.

@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import AccountSelect from "@/components/account-select";
 import StatCard from "@/components/stat-card";
 import FollowerChart from "@/components/follower-chart";
+import FollowerHeroCard from "@/components/follower-hero-card";
 import type { OverviewResponse } from "@/app/api/instagram/overview/route";
 
 function formatNumber(n: number | null): string {
@@ -105,24 +106,32 @@ export default function OverviewPage() {
   const { totals, posts, accounts, insightsAvailable, followers, followerHistory } =
     data;
 
+  const netFollowers =
+    followerHistory && followerHistory.length > 1
+      ? followerHistory[followerHistory.length - 1].followers - followerHistory[0].followers
+      : null;
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-6">
+      {/* Hero Follower Growth Display */}
+      {followers !== null && (
+        <FollowerHeroCard
+          followers={followers}
+          username={data.account.username}
+          netChange={netFollowers}
+          daysCount={followerHistory.length || 30}
+        />
+      )}
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between pt-2">
         <div className="min-w-0">
-          <h1 className="text-lg font-semibold text-foreground">Overview</h1>
+          <h1 className="text-lg font-semibold text-foreground">Content Overview</h1>
           <p className="text-sm text-muted mt-1">
             {data.requestedCount === "all" ? "All-time" : "Recent"} —{" "}
             {totals.posts} post{totals.posts === 1 ? "" : "s"} from @
             {data.account.username}
             {data.truncated ? ` (capped at ${totals.posts})` : ""}
           </p>
-          {followers !== null && (
-            // Kept out of the tile row below: that row sums the selected posts,
-            // whereas this is a current account-level total.
-            <p className="mt-1 text-sm text-muted">
-              {followers.toLocaleString()} followers
-            </p>
-          )}
         </div>
         <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
           <label className="flex flex-col gap-2 text-sm">

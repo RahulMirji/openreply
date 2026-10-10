@@ -10,6 +10,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { signOutAction } from "@/lib/actions/auth";
+import OpenReplyLogo from "@/components/openreply-logo";
+import {
+  LayoutDashboard,
+  BarChart3,
+  Trophy,
+  Inbox,
+  Megaphone,
+  Share2,
+  ScrollText,
+  Settings,
+  Activity,
+  LogOut,
+} from "lucide-react";
 
 /**
  * Split out so it can read useFormStatus, which only reports the status of a
@@ -22,35 +35,38 @@ function SignOutButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full text-left px-3 py-2 rounded text-sm text-muted hover:text-foreground hover:bg-surface-hover disabled:opacity-60 transition-colors"
+      className="w-full flex items-center gap-2.5 px-3 py-2 rounded text-sm font-medium text-muted hover:text-foreground hover:bg-surface-hover disabled:opacity-60 transition-colors"
     >
-      {pending ? "Signing out..." : "Sign out"}
+      <LogOut className="h-4 w-4 shrink-0 text-muted" />
+      <span>{pending ? "Logging out..." : "Logout"}</span>
     </button>
   );
 }
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Overview", href: "/overview" },
-  { label: "Inbox", href: "/inbox" },
-  { label: "Campaigns", href: "/campaigns" },
-  { label: "DM Logs", href: "/logs" },
-  { label: "Settings", href: "/settings" },
-  { label: "Diagnostics", href: "/diagnostics" },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Overview", href: "/overview", icon: BarChart3 },
+  { label: "Achievements", href: "/achievements", icon: Trophy },
+  { label: "Inbox", href: "/inbox", icon: Inbox },
+  { label: "Campaigns", href: "/campaigns", icon: Megaphone },
+  { label: "Cross Posting", href: "/crosspost", icon: Share2 },
+  { label: "DM Logs", href: "/logs", icon: ScrollText },
+  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Diagnostics", href: "/diagnostics", icon: Activity },
 ];
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   workspaceName: string;
+  userName?: string | null;
   userEmail?: string | null;
+  userImage?: string | null;
 }
 
 export default function Sidebar({
   isOpen,
   onClose,
-  workspaceName,
-  userEmail,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -73,13 +89,15 @@ export default function Sidebar({
         `}
       >
         <div className="px-6 py-5 border-b border-border">
-          <Link href="/dashboard" className="text-base font-semibold">
-            OpenReply
+          <Link href="/dashboard" className="text-base font-semibold flex items-center gap-2.5">
+            <OpenReplyLogo className="h-6 w-6 shrink-0" />
+            <span>OpenReply</span>
           </Link>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
+            const Icon = item.icon;
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -89,7 +107,7 @@ export default function Sidebar({
                 onClick={onClose}
                 aria-current={isActive ? "page" : undefined}
                 className={`
-                  block px-3 py-2.5 rounded text-sm
+                  flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors
                   ${
                     isActive
                       ? "bg-surface-hover text-foreground font-medium"
@@ -97,24 +115,18 @@ export default function Sidebar({
                   }
                 `}
               >
-                {item.label}
+                <Icon
+                  className={`h-4 w-4 shrink-0 transition-colors ${
+                    isActive ? "text-accent" : "text-muted"
+                  }`}
+                />
+                <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="px-5 py-4 border-t border-border space-y-3">
-          <div>
-            <p className="text-sm text-foreground truncate">{workspaceName}</p>
-            {userEmail ? (
-              <p className="text-xs text-muted truncate" title={userEmail}>
-                {userEmail}
-              </p>
-            ) : (
-              <p className="text-xs text-muted">Self-hosted</p>
-            )}
-          </div>
-
+        <div className="px-3 py-3 border-t border-border">
           <form action={signOutAction}>
             <SignOutButton />
           </form>

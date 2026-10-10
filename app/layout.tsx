@@ -12,6 +12,14 @@ export const metadata: Metadata = {
     "social commerce",
     "manychat alternative",
   ],
+  icons: {
+    icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/openreply-icon Background Removed.png", type: "image/png" },
+    ],
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({

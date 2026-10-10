@@ -605,6 +605,33 @@ export async function getAllUserMedia(
   return results.slice(0, max);
 }
 
+export async function getSingleMedia(
+  accessToken: string,
+  mediaId: string
+): Promise<InstagramMedia> {
+  const url = new URL(`${instagramGraphBase()}/${mediaId}`);
+  url.searchParams.set("fields", MEDIA_FIELDS);
+  url.searchParams.set("access_token", accessToken);
+
+  const response = await fetch(url.toString());
+  return handleResponse<InstagramMedia>(response);
+}
+
+export async function getCarouselChildren(
+  accessToken: string,
+  mediaId: string
+): Promise<Array<{ id: string; media_type: string; media_url?: string; thumbnail_url?: string }>> {
+  const url = new URL(`${instagramGraphBase()}/${mediaId}/children`);
+  url.searchParams.set("fields", "id,media_type,media_url,thumbnail_url");
+  url.searchParams.set("access_token", accessToken);
+
+  const response = await fetch(url.toString());
+  const data = await handleResponse<{
+    data: Array<{ id: string; media_type: string; media_url?: string; thumbnail_url?: string }>;
+  }>(response);
+  return data.data ?? [];
+}
+
 /**
  * Fetch per-media insight metrics (views, reach, saved, shares, etc.).
  *
