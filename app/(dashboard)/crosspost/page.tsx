@@ -7,6 +7,9 @@ import AccountSelect, { type AccountOption } from "@/components/account-select";
 import XDraftReviewModal from "@/components/x-draft-review-modal";
 import XWebPublishModal from "@/components/x-web-publish-modal";
 import XConnectCard from "@/components/x-connect-card";
+import RadarFeed from "@/components/radar-feed";
+import RadarAiChat from "@/components/radar-ai-chat";
+import { Sparkles, Camera, Share2, MessageSquare } from "lucide-react";
 import type { XCrossPostDraft } from "@/app/generated/prisma/client";
 
 interface InstagramPost {
@@ -21,6 +24,7 @@ interface InstagramPost {
 }
 
 export default function CrossPostPage() {
+  const [activeSourceTab, setActiveSourceTab] = useState<"INSTAGRAM" | "RADAR" | "AI_CHAT">("RADAR");
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [posts, setPosts] = useState<InstagramPost[]>([]);
@@ -179,14 +183,14 @@ export default function CrossPostPage() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-            Cross-Posting to X (Twitter)
+            X (Twitter) Cross-Posting & AI Radar
           </h1>
           <p className="mt-1 text-sm text-muted">
-            Prepare, adapt captions (≤280 chars), and approve Instagram posts for X. 100% Free.
+            Curate viral developer insights with Gemini 3.8 Flash, or cross-post your Instagram media to X.
           </p>
         </div>
 
-        {accounts.length > 0 && (
+        {activeSourceTab === "INSTAGRAM" && accounts.length > 0 && (
           <div className="w-full sm:w-auto">
             <AccountSelect
               accounts={accounts}
@@ -199,11 +203,70 @@ export default function CrossPostPage() {
         )}
       </div>
 
+      {/* Primary Mode Switcher */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveSourceTab("RADAR")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+            activeSourceTab === "RADAR"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "border border-border bg-white text-muted hover:bg-surface-hover hover:text-foreground"
+          }`}
+        >
+          <Sparkles className="h-4 w-4" />
+          AI Tech Radar (Watchlist)
+          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">
+            Live
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSourceTab("AI_CHAT")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+            activeSourceTab === "AI_CHAT"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "border border-border bg-white text-muted hover:bg-surface-hover hover:text-foreground"
+          }`}
+        >
+          <MessageSquare className="h-4 w-4" />
+          AI Curator Chat (Idea to Post)
+          <span className="rounded-full bg-accent/15 text-accent px-2 py-0.5 text-[10px] font-bold">
+            3 Modes
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSourceTab("INSTAGRAM")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+            activeSourceTab === "INSTAGRAM"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "border border-border bg-white text-muted hover:bg-surface-hover hover:text-foreground"
+          }`}
+        >
+          <Camera className="h-4 w-4" />
+          Instagram Cross-Post
+          <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] text-muted">
+            {posts.length} posts
+          </span>
+        </button>
+      </div>
+
       {/* X Account Connection Card */}
       <XConnectCard />
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+      {/* View: AI Tech Radar */}
+      {activeSourceTab === "RADAR" ? (
+        <RadarFeed onOpenChat={() => setActiveSourceTab("AI_CHAT")} />
+      ) : activeSourceTab === "AI_CHAT" ? (
+        <RadarAiChat />
+      ) : (
+        /* View: Instagram Cross-Posting */
+        <div className="space-y-6">
+          {/* Filter Tabs */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
         {(
           [
             { key: "ALL", label: `All Posts (${posts.length})` },
@@ -393,6 +456,8 @@ export default function CrossPostPage() {
               </div>
             );
           })}
+        </div>
+      )}
         </div>
       )}
 

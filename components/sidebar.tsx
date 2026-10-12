@@ -22,6 +22,7 @@ import {
   Settings,
   Activity,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 
 /**
@@ -46,10 +47,11 @@ function SignOutButton() {
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Overview", href: "/overview", icon: BarChart3 },
-  { label: "Achievements", href: "/achievements", icon: Trophy },
-  { label: "Inbox", href: "/inbox", icon: Inbox },
-  { label: "Campaigns", href: "/campaigns", icon: Megaphone },
+  { label: "AI Chat", href: "/chat", icon: Sparkles, badge: "AI" },
   { label: "Cross Posting", href: "/crosspost", icon: Share2 },
+  { label: "Campaigns", href: "/campaigns", icon: Megaphone },
+  { label: "Inbox", href: "/inbox", icon: Inbox },
+  { label: "Achievements", href: "/achievements", icon: Trophy },
   { label: "DM Logs", href: "/logs", icon: ScrollText },
   { label: "Settings", href: "/settings", icon: Settings },
   { label: "Diagnostics", href: "/diagnostics", icon: Activity },
@@ -120,7 +122,12 @@ export default function Sidebar({
                     isActive ? "text-accent" : "text-muted"
                   }`}
                 />
-                <span>{item.label}</span>
+                <span className="flex-1">{item.label}</span>
+                {"badge" in item && item.badge && (
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}

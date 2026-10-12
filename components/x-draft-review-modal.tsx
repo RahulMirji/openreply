@@ -31,6 +31,35 @@ export default function XDraftReviewModal({
   const [copied, setCopied] = useState(false);
   const [showWebPublishModal, setShowWebPublishModal] = useState(false);
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
+  const [aiGeneratedOnce, setAiGeneratedOnce] = useState(false);
+
+  async function handleGenerateAICaption() {
+    setGeneratingAI(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/x/drafts/${draft.id}/ai-caption`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          caption: draft.originalCaption || tweetText,
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || "Failed to generate AI caption");
+      } else if (data.data?.tweetText) {
+        setTweetText(data.data.tweetText);
+        setAiGeneratedOnce(true);
+      }
+    } catch {
+      setError("Network error while generating AI caption");
+    } finally {
+      setGeneratingAI(false);
+    }
+  }
 
   function handleDownloadSlide(index: number) {
     const isVideo = draft.mediaType === "VIDEO";
@@ -290,7 +319,7 @@ export default function XDraftReviewModal({
           <div className="flex flex-col gap-4">
             <div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <label
                     htmlFor="tweet-composer"
                     className="text-xs font-bold uppercase tracking-wide text-foreground"
@@ -299,14 +328,36 @@ export default function XDraftReviewModal({
                   </label>
                   <button
                     type="button"
+                    disabled={generatingAI}
+                    onClick={handleGenerateAICaption}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent text-white px-2.5 py-1 text-xs font-medium hover:bg-accent/90 disabled:opacity-60 transition cursor-pointer shadow-xs"
+                    title="Generate viral, clean-spaced caption with Gemini 3.8 Flash (converts comment-for-link to 'link in comments', hyphen bullets, no em dashes, <= 280 chars)"
+                  >
+                    {generatingAI ? (
+                      <>
+                        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>Writing with AI...</span>
+                      </>
+                    ) : aiGeneratedOnce ? (
+                      <>
+                        <span>🔄 Regenerate with AI</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>✨ Generate with AI</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       const formatted = formatCleanXCaption(tweetText || draft.originalCaption || "");
                       setTweetText(formatted);
                     }}
-                    className="inline-flex items-center gap-1 rounded-md border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent hover:bg-accent/20 transition cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2 py-0.5 text-[11px] font-medium text-muted hover:text-foreground hover:bg-surface-hover transition cursor-pointer"
                     title="Restructure with clean line gaps, '- ' lists, and no em dashes"
                   >
-                    🪄 Format Clean (X Style)
+                    🪄 Format Clean
                   </button>
                 </div>
                 <span

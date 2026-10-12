@@ -149,6 +149,10 @@ INSTAGRAM_APP_ID="your_instagram_app_id"
 INSTAGRAM_APP_SECRET="your_instagram_app_secret"
 FACEBOOK_APP_SECRET="your_facebook_app_secret"
 WEBHOOK_VERIFY_TOKEN="your_webhook_verify_token"
+
+# Google Gemini AI (Vertex AI / Gemini 3.8 Flash for X Cross-Posting)
+GEMINI_API_KEY="your_gemini_api_key"
+GEMINI_PROJECT_ID="patil-hospital-pos"
 ```
 
 ### B. Build App & Run Database Migrations
